@@ -1,0 +1,25 @@
+name: build-ocr
+on:
+  push:
+    paths:
+      - ocr/**
+      - .github/workflows/build-ocr.yml
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile ocr (arm64e, iphoneos, Vision)
+        run: |
+          set -e
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang -arch arm64e -isysroot "$SDK" -fobjc-arc \
+            -framework Foundation -framework Vision -framework CoreGraphics -framework ImageIO \
+            -o ocr/ocrbin ocr/ocr.m
+          file ocr/ocrbin
+          mkdir -p out && cp ocr/ocrbin out/ocr
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ocr-bin
+          path: out/*
+          if-no-files-found: error
