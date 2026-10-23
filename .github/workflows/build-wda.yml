@@ -1,19 +1,18 @@
-# Dựng WebDriverAgent thành file .ipa KHÔNG KÝ trên "Mac đám mây" (GitHub Actions) — để cài vào iPhone jailbreak.
-# Vì sao: WebDriverAgent bắt buộc biên dịch trên macOS/Xcode một lần. Không có Mac → dùng máy ảo macOS miễn phí của GitHub.
-# Máy đã jailbreak + AppSync nên KHÔNG cần ký (CODE_SIGNING_ALLOWED=NO).
 name: build-wda
 on:
-  workflow_dispatch: {}        # bấm chạy tay (hoặc gh workflow run)
+  workflow_dispatch: {}
+  push:
+    branches: [ master ]
 jobs:
   build:
-    runs-on: macos-14          # có sẵn Xcode
+    runs-on: macos-14
     steps:
-      - name: Lấy mã nguồn WebDriverAgent (appium)
+      - name: Checkout WebDriverAgent (appium)
         uses: actions/checkout@v4
         with:
           repository: appium/WebDriverAgent
           ref: master
-      - name: Biên dịch (build-for-testing, không ký)
+      - name: Build for testing (no signing)
         run: |
           set -e
           xcodebuild build-for-testing \
@@ -22,7 +21,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO AD_HOC_CODE_SIGNING_ALLOWED=YES
-      - name: Đóng gói thành .ipa
+      - name: Package into unsigned ipa
         run: |
           set -e
           APP=$(find build/Build/Products -name 'WebDriverAgentRunner-Runner.app' -maxdepth 3 | head -1)
@@ -31,7 +30,7 @@ jobs:
           cp -R "$APP" Payload/
           zip -qr WebDriverAgentRunner.ipa Payload
           ls -la WebDriverAgentRunner.ipa
-      - name: Nộp file .ipa làm artifact
+      - name: Upload ipa artifact
         uses: actions/upload-artifact@v4
         with:
           name: WebDriverAgentRunner-ipa
