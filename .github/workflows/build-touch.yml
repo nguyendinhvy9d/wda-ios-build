@@ -1,0 +1,28 @@
+name: build-touch
+on:
+  push:
+    paths:
+      - touch/**
+      - .github/workflows/build-touch.yml
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile touch (arm64e, iphoneos)
+        run: |
+          set -e
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang -arch arm64e -isysroot "$SDK" \
+            -framework CoreFoundation -framework IOKit \
+            -Wl,-undefined,dynamic_lookup \
+            -o touch/touchbin touch/touch.c
+          file touch/touchbin
+          mkdir -p out
+          cp touch/touchbin out/touch
+          cp touch/entitlements.plist out/entitlements.plist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: touch-bin
+          path: out/*
+          if-no-files-found: error

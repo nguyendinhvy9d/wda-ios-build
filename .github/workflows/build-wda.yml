@@ -3,6 +3,8 @@ on:
   workflow_dispatch: {}
   push:
     branches: [ master ]
+    paths:
+      - .github/workflows/build-wda.yml
 jobs:
   build:
     runs-on: macos-14
