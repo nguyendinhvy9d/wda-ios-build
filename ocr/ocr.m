@@ -9,11 +9,19 @@
 int main(int argc, char **argv) {
     @autoreleasepool {
         if (argc < 2) { fprintf(stderr, "dung: ocr <anh.png>\n"); return 2; }
-        NSString *path = [NSString stringWithUTF8String:argv[1]];
-        NSData *data = [NSData dataWithContentsOfFile:path];
-        if (!data) { fprintf(stderr, "khong doc duoc file: %s\n", argv[1]); return 1; }
-        CGImageSourceRef src = CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL);
-        if (!src) { fprintf(stderr, "khong tao duoc image source (bytes=%lu)\n", (unsigned long)data.length); return 1; }
+        // doc file bang C stdio (Foundation NSData trong CLI nay khong doc duoc)
+        FILE *f = fopen(argv[1], "rb");
+        if (!f) { fprintf(stderr, "khong mo duoc file: %s\n", argv[1]); return 1; }
+        fseek(f, 0, SEEK_END); long sz = ftell(f); fseek(f, 0, SEEK_SET);
+        if (sz <= 0) { fclose(f); fprintf(stderr, "file rong\n"); return 1; }
+        void *buf = malloc((size_t)sz);
+        size_t rd = fread(buf, 1, (size_t)sz, f); fclose(f);
+        if (rd != (size_t)sz) { free(buf); fprintf(stderr, "doc thieu bytes\n"); return 1; }
+        CFDataRef cfdata = CFDataCreate(NULL, (const UInt8 *)buf, sz);
+        free(buf);
+        CGImageSourceRef src = CGImageSourceCreateWithData(cfdata, NULL);
+        if (cfdata) CFRelease(cfdata);
+        if (!src) { fprintf(stderr, "khong tao duoc image source (bytes=%ld)\n", sz); return 1; }
         CGImageRef img = CGImageSourceCreateImageAtIndex(src, 0, NULL);
         if (!img) { CFRelease(src); fprintf(stderr, "khong giai duoc anh\n"); return 1; }
 
