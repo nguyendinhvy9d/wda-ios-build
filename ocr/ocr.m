@@ -37,6 +37,10 @@ int main(int argc, char **argv) {
         VNRecognizeTextRequest *req = [[VNRecognizeTextRequest alloc] init];
         req.recognitionLevel = VNRequestTextRecognitionLevelAccurate;
         req.usesLanguageCorrection = NO;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        req.usesCPUOnly = YES;   // ep chay CPU: tranh loi "Error loading network" khi khong vao duoc Neural Engine
+#pragma clang diagnostic pop
         if (@available(iOS 16.0, *)) { req.recognitionLanguages = @[@"ja-JP", @"en-US"]; }
         else { req.recognitionLanguages = @[@"en-US"]; }
 
