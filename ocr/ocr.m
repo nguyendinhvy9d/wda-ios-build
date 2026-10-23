@@ -10,11 +10,12 @@ int main(int argc, char **argv) {
     @autoreleasepool {
         if (argc < 2) { fprintf(stderr, "dung: ocr <anh.png>\n"); return 2; }
         NSString *path = [NSString stringWithUTF8String:argv[1]];
-        NSURL *url = [NSURL fileURLWithPath:path];
-        CGImageSourceRef src = CGImageSourceCreateWithURL((__bridge CFURLRef)url, NULL);
-        if (!src) { fprintf(stderr, "khong doc duoc anh\n"); return 1; }
+        NSData *data = [NSData dataWithContentsOfFile:path];
+        if (!data) { fprintf(stderr, "khong doc duoc file: %s\n", argv[1]); return 1; }
+        CGImageSourceRef src = CGImageSourceCreateWithData((__bridge CFDataRef)data, NULL);
+        if (!src) { fprintf(stderr, "khong tao duoc image source (bytes=%lu)\n", (unsigned long)data.length); return 1; }
         CGImageRef img = CGImageSourceCreateImageAtIndex(src, 0, NULL);
-        if (!img) { CFRelease(src); fprintf(stderr, "anh loi\n"); return 1; }
+        if (!img) { CFRelease(src); fprintf(stderr, "khong giai duoc anh\n"); return 1; }
 
         VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCGImage:img options:@{}];
         VNRecognizeTextRequest *req = [[VNRecognizeTextRequest alloc] init];
